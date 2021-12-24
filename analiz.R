@@ -1,0 +1,327 @@
+#install.packages("readxl")
+#install.packages('tidyverse')
+#install.packages("stringi")
+library("readxl")
+library('tidyverse')
+library('stringr')
+library('ggplot2')
+library('dplyr')
+
+# ---Обявляем переменные пути
+workpath = ""
+rootdir = "NikKor"
+workdir = "Магазин"
+marcetname = "Магазин"
+
+# -- Переходим в рабучую директорию
+setwd(paste(workpath, rootdir, workdir, 'Анализ', sep='/'))
+
+getwd()
+
+# -- Получаем информациию о товарах
+goodslist <- read_excel('goods.xlsx')
+
+# -- Получаем список имен файлов с информацией
+listin <- list.files(pattern = '.in')
+listout <- list.files(pattern = '.out')
+
+# -- Получаем данные из файлов
+list_in <- list()
+list_out <- list()
+
+sapply(listin,
+            function(x){
+                list_in[x]<<-list(read.csv(x))
+              }, simplify=FALSE)
+
+sapply(listout,
+              function(x){
+                list_out[x]<<-list(read.csv(x))
+              }, simplify=FALSE)
+
+# -- Список имен магазинов
+namelist <- sapply(strsplit(listin, "_"), function(x) x [1])
+
+
+# -- Выручка для одного товара 
+v <- function(n, mname="Магазин1_Магазин.out"){
+  return(sum(list_out[[mname]][goodslist$name[n]])*goodslist$sele_prise[n])
+}
+# -- Выручка для всех товаров
+V <- function(mname="Магазин1_Магазин.out"){
+  return(sum(sapply(c(1:length(list_out[[mname]])), function(x){return(v(x, mname = mname))})))
+}
+# -- Прибыль для одного товара 
+p <- function(n, namein="Магазин1_Магазин.in", nameout="Магазин1_Магазин.out"){
+  return(
+    sum(list_out[[nameout]][goodslist$name[n]])*goodslist$sele_prise[n] - sum(list_in[[namein]][goodslist$name[n]])*goodslist$sb[n] -
+      sum(list_in[[namein]][goodslist$name[n]]-list_out[[nameout]][goodslist$name[n]])*goodslist$util[n])
+}
+# -- Для всех
+P <- function(namein="Магазин1_Магазин.in", nameout="Магазин1_Магазин.out"){
+  return(sum(sapply(c(1:length(list_out[[mname]])), function(x){return(p(x, namein=namein, nameout=nameout))})))
+}
+# -- Реализация для одного товара 
+s <- function(n, mname="Магазин1_Магазин.out"){
+  return(sum(list_out[[mname]][goodslist$name[n]]))
+}
+# -- Для всех
+S <- function(mname="Магазин1_Магазин.out"){
+  return(sum(sapply(c(1:length(list_out[[mname]])), function(x){return(s(x, mname = mname))})))
+}
+# -- Списания для одного товара 
+wf <- function(n, namein="Магазин1_Магазин.in", nameout="Магазин1_Магазин.out"){
+  return(sum(list_in[[namein]][goodslist$name[n]]-list_out[[nameout]][goodslist$name[n]]))
+}
+# -- Для всех
+WF <- function(namein="Магазин1_Магазин.in", nameout="Магазин1_Магазин.out"){
+  return(sum(sapply(c(1:length(list_out[[mname]])), function(x){return(wf(x, namein=namein, nameout=nameout))})))
+}
+
+# -- Равномерность продаж для одного товара 
+Sd <- function(n, mname="Магазин1_Магазин.out"){
+  return(
+    sd( unlist(list_out[[mname]][goodslist$name[n]], use.names=FALSE) )
+    )
+}
+# -- Продажи макс для одного товара 
+Smax <- function(n, mname="Магазин1_Магазин.out"){
+  m <- max(list_out[[mname]][goodslist$name[n]])
+  i <- m == list_out[[mname]][goodslist$name[n]]
+    return(c(match(TRUE, i), m))
+}
+# -- Продажи мин для одного товара 
+Smin <- function(n, mname="Магазин1_Магазин.out"){
+  m <- min(list_out[[mname]][goodslist$name[n]])
+  i <- m == list_out[[mname]][goodslist$name[n]]      
+  return(c(match(TRUE, i), m))
+}
+# -- Списания макс для одного товара 
+wfmax <- function(n, namein="Магазин1_Магазин.in", nameout="Магазин1_Магазин.out"){
+  m <- list_in[[namein]][goodslist$name[n]]-list_out[[nameout]][goodslist$name[n]]
+  i <- m == max(m)
+  return(c(match(TRUE, i), max(m)))
+}
+
+
+# -- Функция генерации таблицы по магазину
+create_tabl <- function(n){
+  data.v <- sapply(c(1: length(listout)), function(x){return(v(n=n, mname = listout[x]))})
+  data.p <- sapply(c(1: length(listout)), function(x){return(p(n=n, namein = listin[x], nameout = listout[x]))})
+  data.s <- sapply(c(1: length(listout)), function(x){return(s(n=n, mname = listout[x]))})
+  data.wf <- sapply(c(1: length(listout)), function(x){return(wf(n=n, namein = listin[x], nameout = listout[x]))})
+  data.sd <- sapply(c(1: length(listout)), function(x){return(Sd(n=n, mname = listout[x]))})
+  data.smax <- sapply(c(1: length(listout)), function(x){return(Smax(n=n, mname = listout[x]))})
+  data.smin <- sapply(c(1: length(listout)), function(x){return(Smin(n=n, mname = listout[x]))})
+  data.wfmax <- sapply(c(1: length(listout)), function(x){return(wfmax(n=n, namein = listin[x], nameout = listout[x]))})
+  
+  data <- data.frame('Выручка'=data.v,'Прибыль'=data.p,'Реализация'=data.s,'Списание'=data.wf,'sd'=data.sd,
+                    'Продажи_макс'=data.smax[2,], 'ДеньПмин'=data.smax[1,],
+                    'Продажи_мин'=data.smin[2,], 'ДеньПмакс'=data.smin[1,],
+                    'Списания_макс'=data.wfmax[2,], 'ДеньСмакс'=data.wfmax[1,],
+                    row.names = unlist(namelist, use.names=FALSE))
+  
+  s <- c(sum(data[1]),sum(data[2]),sum(data[3]),sum(data[4]),sum(data[5]))
+  sr <- c(sum(data[1])/unlist(data[1])%>%length(),sum(data[2])/unlist(data[2])%>%length(),sum(data[3])/unlist(data[3])%>%length(),sum(data[4])/unlist(data[4])%>%length(),sum(data[5])/unlist(data[5])%>%length())
+  
+  data ["Итог",1:5] <- s
+  data ["Среднее",1:5] <- sr
+  return(data)
+}
+ 
+# -- Создаем таблицы с данными для всех магазинов
+Datagoods <- list()
+sapply(1:length(goodslist$name),function(x){Datagoods[goodslist$name[x]] <<- list(create_tabl(x))})
+
+# -- Вывод данных
+Datagoods
+
+
+mnumber <- 1
+
+# -- объем продаж
+pls<- sapply(1:length(attributes(list_out[[mnumber]])[["names"]]),
+              function(x){list_out[[mnumber]][,x]})
+# -- выручка
+plv <- sapply(1:length(attributes(list_out[[mnumber]])[["names"]]),
+              function(x){list_out[[mnumber]][,x]*goodslist$sele_prise[x]})
+# -- прибыль
+plp <- sapply(1:length(attributes(list_out[[mnumber]])[["names"]]),
+              function(x){
+                list_out[[mnumber]][,x]*goodslist$sele_prise[x] -
+                  list_in[[mnumber]][,x]*goodslist$sb[x] -
+                  (list_in[[mnumber]][,x]-list_out[[mnumber]][,x])*goodslist$util[x]
+              })
+# -- списание
+plw <- sapply(1:length(attributes(list_out[[mnumber]])[["names"]]),
+              function(x){
+                (list_in[[mnumber]][,x]-list_out[[mnumber]][,x])*goodslist$util[x]
+                })
+# -- рентабельность
+plr <- sapply(1:length(attributes(list_out[[mnumber]])[["names"]]),
+              function(x){
+                (list_out[[mnumber]][,x]*goodslist$sele_prise[x] -
+                list_in[[mnumber]][,x]*goodslist$sb[x] -
+                (list_in[[mnumber]][,x]-list_out[[mnumber]][,x])*goodslist$util[x]) / 
+                (list_in[[mnumber]][,x]*goodslist$sb[x]+
+                (list_in[[mnumber]][,x]-list_out[[mnumber]][,x])*goodslist$util[x])
+              })
+
+
+pls <- data.frame(pls)
+names(pls) <- goodslist$name
+pls <- cbind(pls, day = 1:length(pls[,product]))
+
+plv <- data.frame(plv)
+names(plv) <- goodslist$name
+plv <- cbind(plv, day = 1:length(plv[,product]))
+
+plp <- data.frame(plp)
+names(plp) <- goodslist$name
+plp <- cbind(plp, day = 1:length(plp[,product]))
+plw <- data.frame(plw)
+names(plw) <- goodslist$name
+plw <- cbind(plw, day = 1:length(plw[,product]))
+plr <- data.frame(plr)
+names(plr) <- goodslist$name
+plr <- cbind(plr, day = 1:length(plr[,product]))
+
+for (product in 1:(goodslist$name%>%length())){
+  a <- ggplot(
+    data = pls,
+    aes(x = day,
+        y = pls[goodslist$name[product]]%>%unlist())) + 
+    
+    geom_line() + 
+    geom_point() + 
+    labs(y = goodslist$name[product], title = paste("Обем продаж", goodslist$name[product])) + 
+    scale_x_continuous(breaks = 1:7, minor_breaks = 1:7)
+  
+  a%>% print()
+  
+  a <- ggplot(
+    data = plv,
+    aes(x = day,
+        y = plv[goodslist$name[product]]%>%unlist())) + 
+    
+    geom_line() + 
+    geom_point() + 
+    labs(y = goodslist$name[product], title = paste("Выручка", goodslist$name[product])) + 
+    scale_x_continuous(breaks = 1:7, minor_breaks = 1:7)
+  
+  a%>% print()
+  
+  a <- ggplot(
+    data = plp,
+    aes(x = day,
+        y = plp[goodslist$name[product]]%>%unlist())) + 
+    
+    geom_line() + 
+    geom_point() + 
+    labs(y = goodslist$name[product], title = paste("Прибыль", goodslist$name[product])) + 
+    scale_x_continuous(breaks = 1:7, minor_breaks = 1:7)
+  
+  a%>% print()
+  
+  a <- ggplot(
+    data = plw,
+    aes(x = day,
+        y = plw[goodslist$name[product]]%>%unlist())) + 
+    
+    geom_line() + 
+    geom_point() + 
+    labs(y = goodslist$name[product], title = paste("Списание", goodslist$name[product])) + 
+    scale_x_continuous(breaks = 1:7, minor_breaks = 1:7)
+  
+  a%>% print()
+  
+  a <- ggplot(
+    data = plr,
+    aes(x = day,
+        y = plr[goodslist$name[product]]%>%unlist())) +
+    
+    geom_line() + 
+    geom_point() + 
+    labs(y = goodslist$name[product], title = paste("Рентабельность", goodslist$name[product])) + 
+    scale_x_continuous(breaks = 1:7, minor_breaks = 1:7)
+  
+  a%>% print()
+}
+
+
+
+marcetin <- "Магазин1_Магазин.in"
+marcetout <- "Магазин1_Магазин.out"
+
+gcol <- goodslist$name%>%length()
+data <- data.frame(good = rep(goodslist$name,list_out[[marcetout]][,1]%>%length()))
+
+sapply(1:(list_out[[marcetout]][,1]%>%length()),
+       function(x){
+         
+         data[(gcol*(x-1)+1):(gcol*(x-1)+gcol),'day'] <<- x
+         
+         data[(gcol*(x-1)+1):(gcol*(x-1)+gcol),'profit'] <<- 
+           (list_out[[marcetout]][x,]*goodslist$sele_prise -
+            list_in[[marcetin]][x,]*goodslist$sb - 
+           (list_in[[marcetin]][x,]-list_out[[marcetout]][x,])*goodslist$util)%>%unlist()
+         
+         data[(gcol*(x-1)+1):(gcol*(x-1)+gcol),'wf'] <<- 
+            ((list_in[[marcetin]][x,]-list_out[[marcetout]][x,])*goodslist$util)%>%unlist()
+         
+          data[(gcol*(x-1)+1):(gcol*(x-1)+gcol),'r'] <<- 
+            (((list_out[[marcetout]][x,]*goodslist$sele_prise - 
+            list_in[[marcetin]][x,]*goodslist$sb - 
+            (list_in[[marcetin]][x,]-list_out[[marcetout]][x,])*goodslist$util) / 
+            (list_in[[marcetin]][x,]*goodslist$sb + 
+            (list_in[[marcetin]][x,]-list_out[[marcetout]][x,])*goodslist$util)))%>%unlist()
+})
+
+
+
+ggplot(
+  data = data,
+  aes(x = day,
+      y = profit,
+      color = good)) + 
+  geom_line() + 
+  geom_point() +  
+  labs(y = 'Прибыль руб.', title = "Прибыль")  + 
+  scale_x_continuous(breaks = 1:7, minor_breaks = 1:7)
+  
+ggplot(
+  data = data,
+  aes(x = day,
+      y = wf,
+      color = good)) + 
+  geom_line() + 
+  geom_point() +  
+  labs(y = 'Списание руб.', title = "Списание")  + 
+  scale_x_continuous(breaks = 1:7, minor_breaks = 1:7)
+  
+ggplot(
+  data = data,
+  aes(x = day,
+      y = r,
+      color = good)) + 
+  geom_line() + 
+  geom_point() +  
+  labs(y = 'Рентабельность %', title = "Рентабельность") + 
+  scale_y_continuous(limits = c(-0.5, NaN), labels = scales::label_percent()) + 
+  scale_x_continuous(breaks = 1:7, minor_breaks = 1:7)
+
+
+
+good <- "Cake_pcs."
+
+graf3 <- data.frame( Profit = Datagoods[[good]]$Выручка[1:(length(Datagoods[[good]]$Выручка)-2)],
+name <- namelist
+)
+ggplot(graf3, aes(x = name, y = Profit)) +
+  geom_col(aes(fill = name), color = NA) +
+  coord_polar() +
+  guides()
+  
+
+
+
