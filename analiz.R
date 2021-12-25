@@ -323,14 +323,16 @@ ggplot(
 
 good <- "Cake_pcs."
 
-graf3 <- data.frame( Profit = Datagoods[[good]]$Выручка[1:(length(Datagoods[[good]]$Выручка)-2)],
+graf3 <- data.frame( Profit = (Datagoods[[good]]$Выручка[1:(length(Datagoods[[good]]$Выручка)-2)])/1000,
 name <- namelist
 )
 ggplot(graf3, aes(x = name, y = Profit)) +
   geom_col(aes(fill = name), color = NA) +
+  labs(y = 'Прибыль тыс.руб.', title = "Прибыль") +
   coord_polar() +
-  guides()
-  
+  guides() + 
+  geom_text(aes(label = paste0("(", Profit, ")"))) #, nudge_y = -0.25
+write.table(x = Datagoods, file = "File.csv",sep = ';')  
 
 
 

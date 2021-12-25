@@ -111,7 +111,6 @@ main <- function(n){
      data = pls,
      aes(x = day,
          y = pls[goodslist$name[product]]%>%unlist())) + 
-     
      geom_line() + 
      geom_point() + 
      labs(y = goodslist$name[product], title = paste(namelist[n], "Обем продаж",goodslist$name[product])) + 
