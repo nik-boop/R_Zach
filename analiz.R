@@ -1,11 +1,13 @@
 #install.packages("readxl")
 #install.packages('tidyverse')
 #install.packages("stringi")
+#install.packages("ggallin")
 library("readxl")
 library('tidyverse')
 library('stringr')
 library('ggplot2')
-library('dplyr')
+#library('dplyr')
+library('ggallin')
 
 # ---Обявляем переменные пути
 workpath = ""
@@ -136,7 +138,7 @@ sapply(1:length(goodslist$name),function(x){Datagoods[goodslist$name[x]] <<- lis
 # -- Вывод данных
 Datagoods
 
-
+# Номер магазина для задания Графики 1
 mnumber <- 1
 
 # -- объем продаж
@@ -168,23 +170,28 @@ plr <- sapply(1:length(attributes(list_out[[mnumber]])[["names"]]),
               })
 
 
+# -- Преобразование данных в data.frame
 pls <- data.frame(pls)
 names(pls) <- goodslist$name
-pls <- cbind(pls, day = 1:length(pls[,product]))
+pls <- cbind(pls, day = 1:length(pls[,1]))
 
 plv <- data.frame(plv)
 names(plv) <- goodslist$name
-plv <- cbind(plv, day = 1:length(plv[,product]))
+plv <- cbind(plv, day = 1:length(plv[,1]))
 
 plp <- data.frame(plp)
 names(plp) <- goodslist$name
-plp <- cbind(plp, day = 1:length(plp[,product]))
+plp <- cbind(plp, day = 1:length(plp[,1]))
+
 plw <- data.frame(plw)
 names(plw) <- goodslist$name
-plw <- cbind(plw, day = 1:length(plw[,product]))
+plw <- cbind(plw, day = 1:length(plw[,1]))
+
 plr <- data.frame(plr)
 names(plr) <- goodslist$name
-plr <- cbind(plr, day = 1:length(plr[,product]))
+plr <- cbind(plr, day = 1:length(plr[,1]))
+
+# -- Построение графиков по всем товарам
 
 for (product in 1:(goodslist$name%>%length())){
   a <- ggplot(
@@ -194,7 +201,7 @@ for (product in 1:(goodslist$name%>%length())){
     
     geom_line() + 
     geom_point() + 
-    labs(y = goodslist$name[product], title = paste("Обем продаж", goodslist$name[product])) + 
+    labs(y = goodslist$name[product], title = paste(namelist[mnumber], "Обем продаж", goodslist$name[product])) + 
     scale_x_continuous(breaks = 1:7, minor_breaks = 1:7)
   
   a%>% print()
@@ -206,7 +213,7 @@ for (product in 1:(goodslist$name%>%length())){
     
     geom_line() + 
     geom_point() + 
-    labs(y = goodslist$name[product], title = paste("Выручка", goodslist$name[product])) + 
+    labs(y = goodslist$name[product], title = paste(namelist[mnumber],"Выручка", goodslist$name[product])) + 
     scale_x_continuous(breaks = 1:7, minor_breaks = 1:7)
   
   a%>% print()
@@ -218,7 +225,7 @@ for (product in 1:(goodslist$name%>%length())){
     
     geom_line() + 
     geom_point() + 
-    labs(y = goodslist$name[product], title = paste("Прибыль", goodslist$name[product])) + 
+    labs(y = goodslist$name[product], title = paste(namelist[mnumber],"Прибыль", goodslist$name[product])) + 
     scale_x_continuous(breaks = 1:7, minor_breaks = 1:7)
   
   a%>% print()
@@ -230,7 +237,7 @@ for (product in 1:(goodslist$name%>%length())){
     
     geom_line() + 
     geom_point() + 
-    labs(y = goodslist$name[product], title = paste("Списание", goodslist$name[product])) + 
+    labs(y = goodslist$name[product], title = paste(namelist[mnumber],"Списание", goodslist$name[product])) + 
     scale_x_continuous(breaks = 1:7, minor_breaks = 1:7)
   
   a%>% print()
@@ -242,7 +249,7 @@ for (product in 1:(goodslist$name%>%length())){
     
     geom_line() + 
     geom_point() + 
-    labs(y = goodslist$name[product], title = paste("Рентабельность", goodslist$name[product])) + 
+    labs(y = goodslist$name[product], title = paste(namelist[mnumber],"Рентабельность", goodslist$name[product])) + 
     scale_x_continuous(breaks = 1:7, minor_breaks = 1:7)
   
   a%>% print()
@@ -287,6 +294,8 @@ ggplot(
   geom_line() + 
   geom_point() +  
   labs(y = 'Прибыль руб.', title = "Прибыль")  + 
+  scale_y_continuous(trans = ssqrt_trans, breaks = c(-1000, -500, 0, 500, 1000, 5000, 10000, 12500, 15000),
+                     minor_breaks = c(-1000, -500, 0, 500, 1000, 5000, 10000, 12500, 15000)) + 
   scale_x_continuous(breaks = 1:7, minor_breaks = 1:7)
   
 ggplot(

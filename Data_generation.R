@@ -1,3 +1,6 @@
+library("readxl")
+
+
 workpath = ""
 rootdir = "NikKor"
 workdir = "Магазин"
@@ -25,7 +28,7 @@ for (i in 1:10){
   
 }
 
-# -------Генерация данных-------
+# -------Функция генерации данных-------
 
 generate_data <- function (way = '', goods = goodslist, file.name = "Магазин",
                             days = 7, sale.level = 70, supplies = NaN, sale.dev = 0.05) {
@@ -64,6 +67,9 @@ generate_data <- function (way = '', goods = goodslist, file.name = "Магаз�
   
   return(col)
 }
+
+
+# -------Генерация данных-------
 
 sapply(c(1:10), function(i){
   var <- generate_data(paste(workpath, dir_m[i], sep='/', end=''))

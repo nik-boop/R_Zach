@@ -46,10 +46,11 @@ namelist <- sapply(strsplit(listin, "_"), function(x) x [1])
 marcetin <- attributes(list_in)[["names"]]
 marcetout <- attributes(list_out)[["names"]]
 
+# -- Количество товаров
 gcol <- goodslist$name%>%length()
 data <- data.frame(good = rep(goodslist$name,list_out[[marcetout]][,1]%>%length()))
 
-
+# -- Функция построения графиков
 main <- function(n){
   mnumber <- n
   
@@ -81,7 +82,7 @@ main <- function(n){
                        (list_in[[mnumber]][,x]-list_out[[mnumber]][,x])*goodslist$util[x])
                 })
   
-  
+  # -- Преобразование данных в data.frame
   pls <- data.frame(pls)
   names(pls) <- goodslist$name
   pls <- cbind(pls, day = 1:length(pls[,product]))
@@ -93,14 +94,19 @@ main <- function(n){
   plp <- data.frame(plp)
   names(plp) <- goodslist$name
   plp <- cbind(plp, day = 1:length(plp[,product]))
+  
   plw <- data.frame(plw)
   names(plw) <- goodslist$name
   plw <- cbind(plw, day = 1:length(plw[,product]))
+  
   plr <- data.frame(plr)
   names(plr) <- goodslist$name
   plr <- cbind(plr, day = 1:length(plr[,product]))
+  
+  # -- Построение графиков по всем товарам
            
  for (product in 1:(goodslist$name%>%length())){
+   
    a <- ggplot(
      data = pls,
      aes(x = day,
@@ -161,9 +167,16 @@ main <- function(n){
    
    a%>% print()
  }
+  
+  
 }
+
+# -- Список имен магазинов
 for (i in 1:length(listin)){
   print(paste(i, ":", namelist[i]))
 }
-  
+
+
+
+# -- Запуск основной функции
 main(scan())
